@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arrhythmia Detection Using PPG | Edge AI</title>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">TinyML<span class="highlight">Cardio</span></div>
+            <ul class="nav-links">
+                <li><a href="#about">Overview</a></li>
+                <li><a href="#architecture">Architecture</a></li>
+                <li><a href="#hardware">Hardware</a></li>
+                <li><a href="#results">Results</a></li>
+                <li><a href="#demo">Live Signal</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <header class="hero" id="home">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <div class="badge">M.Tech  Project</div>
+            <h1>Arrhythmia Detection Using PPG</h1>
+            <p>An Edge-AI framework utilizing 1D-CNN and TCN architectures on the ESP32-S3 for real-time multi-class classification and motion artifact compensation.</p>
+            <div class="hero-actions">
+                <a href="#architecture" class="btn btn-primary">System Architecture</a>
+                <a href="#demo" class="btn btn-secondary">View Live Demo</a>
+            </div>
+        </div>
+    </header>
+
+    <section id="about" class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Project Overview</h2>
+                <p class="subtitle">Continuous, non-invasive cardiac monitoring built for the edge.</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="card-icon">📊</div>
+                    <h3>Clinical Datasets</h3>
+                    <p>Trained on the MIMIC-III-Ext-PPG database. Motion artifacts are dynamically removed using a Normalized Least Mean Squares (NLMS) adaptive filter.</p>
+                    <div class="dataset-links">
+                        <a href="https://physionet.org/content/mimic-iv-ecg/1.0/" target="_blank" class="card-link">MIMIC-IV Data <span>→</span></a>
+                        <a href="https://physionet.org/content/mimic3wdb/1.0/" target="_blank" class="card-link">MIMIC-III Waveforms <span>→</span></a>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="card-icon">⚡</div>
+                    <h3>Edge Optimization</h3>
+                    <p>Leverages Post-Training Quantization (PTQ) to convert FP32 weights to INT8, allowing the deep learning models to execute within the 512KB SRAM of the ESP32-S3.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="card-icon">🧠</div>
+                    <h3>TinyML Framework</h3>
+                    <p>Utilizes TensorFlow Lite for Microcontrollers (TFLM) to execute 1D-CNN and TCN inferences for multi-class arrhythmia detection (NSR, AFib, PVC).</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="architecture" class="section bg-light">
+        <div class="container">
+            <div class="section-header">
+                <h2>System Architecture</h2>
+            </div>
+            <div class="architecture-content">
+                <div class="text-content">
+                    <div class="step-item">
+                        <div class="step-number">01</div>
+                        <div>
+                            <h4>Data Acquisition (Core 0)</h4>
+                            <p>FreeRTOS task polling the MAX30102 PPG and MPU6050 IMU sensors via a 400kHz Fast Mode I2C bus.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">02</div>
+                        <div>
+                            <h4>Signal Conditioning (Core 1)</h4>
+                            <p>4th-order Butterworth bandpass filter (0.5–8.0 Hz) and NLMS adaptive filtering suppress baseline wander and kinematic noise.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">03</div>
+                        <div>
+                            <h4>Edge Inference (Core 1)</h4>
+                            <p>The TFLM operations resolver processes 5-second overlapping data windows through the quantized 1D-CNN.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">04</div>
+                        <div>
+                            <h4>Diagnostic Telemetry</h4>
+                            <p>Argmax function yields the arrhythmia class, outputting to a local 0.96-inch SSD1306 OLED frame buffer.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="image-content">
+                    <div class="architecture-visual">
+                        <img src="assets/architecture-flow.png" alt="Architecture flow diagram for PPG signal acquisition, conditioning, and edge inference">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="hardware" class="section">
+        <div class="container">
+            <div class="hardware-content">
+                <div class="hardware-text">
+                    <div class="badge">Hardware Stack</div>
+                    <h2>Edge Processing with ESP32-S3</h2>
+                    <p>The system utilizes the Xtensa® dual-core 32-bit LX7 microprocessor. Its built-in vector instructions accelerate the MAC operations for the neural network, allowing sub-second inference.</p>
+                    <ul class="hardware-specs">
+                        <li><strong>Sensors:</strong> MAX30102 Optical PPG & MPU6050 6-Axis IMU</li>
+                        <li><strong>Display:</strong> 0.96-inch SSD1306 OLED (128x64px)</li>
+                        <li><strong>Firmware:</strong> Embedded C++ utilizing FreeRTOS for thread-safe asynchronous task handling</li>
+                    </ul>
+                </div>
+                <div class="hardware-visual">
+                    <div class="hardware-composition">
+                        <div class="comp-item esp32-card">
+                            <img src="assets/esp32.png" alt="ESP32-S3 Microcontroller">
+                            <span class="comp-label">ESP32-S3 Board</span>
+                        </div>
+                        <div class="comp-item sensor-card max30102">
+                            <img src="assets/max30102.png" alt="MAX30102 Sensor">
+                            <span class="comp-label">MAX30102 PPG</span>
+                        </div>
+                        <div class="comp-item sensor-card accel">
+                            <img src="assets/accelerometer.png" alt="Accelerometer">
+                            <span class="comp-label">MPU6050 IMU</span>
+                        </div>
+                        <div class="glow-backdrop"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="results" class="section bg-light">
+        <div class="container">
+            <div class="section-header">
+                <h2>Model Performance</h2>
+                <p class="subtitle">Subject-independent testing results on the MIMIC-III-Ext-PPG dataset.</p>
+            </div>
+            <div class="results-content">
+                <table class="performance-table">
+                    <thead>
+                        <tr>
+                            <th>Model Architecture</th>
+                            <th>Overall Accuracy</th>
+                            <th>Normal (Macro-AUROC)</th>
+                            <th>AFib (Macro-AUROC)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Edge-CNN</strong> (Proposed)</td>
+                            <td>92.11%</td>
+                            <td>90.24%</td>
+                            <td>98.08%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>TCN</strong> (Proposed)</td>
+                            <td>87.03%</td>
+                            <td>73.94%</td>
+                            <td>95.14%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Bi-LSTM</strong></td>
+                            <td>93.15%</td>
+                            <td>92.67%</td>
+                            <td>98.51%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>XGBoost</strong> (Baseline)</td>
+                            <td>85.63%</td>
+                            <td>84.62%</td>
+                            <td>94.18%</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="history-grid">
+                    <div class="history-card">
+                        <img src="assets/history_edge_cnn.png" alt="Edge CNN training history chart">
+                        <span>Edge-CNN</span>
+                    </div>
+                    <div class="history-card">
+                        <img src="assets/history_tcn.png" alt="TCN training history chart">
+                        <span>TCN</span>
+                    </div>
+                    <div class="history-card">
+                        <img src="assets/history_bilstm.png" alt="Bi-LSTM training history chart">
+                        <span>Bi-LSTM</span>
+                    </div>
+                    <div class="history-card">
+                        <img src="assets/history_xgb.png" alt="XGBoost training history chart">
+                        <span>XGBoost</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="demo" class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Signal Visualization</h2>
+                <p class="subtitle">Simulated post-LMS filtered PPG waveform output.</p>
+            </div>
+            <div class="chart-wrapper">
+                <div class="chart-header">
+                    <span class="status-indicator" id="statusDot"></span>
+                    <span>Live Inference: </span>
+                    <select id="rhythmSelect" class="rhythm-dropdown">
+                        <option value="normal">Normal Sinus Rhythm</option>
+                        <option value="afib">Atrial Fibrillation (AFib)</option>
+                        <option value="pvc">Premature Ventricular Contraction (PVC)</option>
+                    </select>
+                </div>
+                <div class="chart-container">
+                    <canvas id="ppgChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container footer-content">
+            <div class="footer-info">
+                <strong>Darshan B</strong> [CB.SC.P2AIE25005]<br>
+                M.Tech Artificial Intelligence<br>
+                Under the guidance of Dr. Vishnu S<br>
+                Department of Computer Science and Engineering<br>
+                Amrita School of Computing, Amrita Vishwa Vidyapeetham
+            </div>
+            <div class="social-links">
+                <a href="https://github.com/Darshan2082002" target="_blank">GitHub Profile</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/script.js"></script>
+</body>
+</html>
